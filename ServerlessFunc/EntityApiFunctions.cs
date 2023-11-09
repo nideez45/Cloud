@@ -36,6 +36,7 @@ namespace ServerlessFunc
         private const string DllContainerName = "dll";
         private const string connectionString = "UseDevelopmentStorage=true";
         private const string AnalysisRoute = "analysis";
+        private const string InsightsRoute = "insights";
 
         [FunctionName("CreateSessionEntity")]
         public static async Task<IActionResult> CreateSessionEntity(
@@ -186,7 +187,89 @@ namespace ServerlessFunc
             return new OkResult();
         }
 
+        [FunctionName("CompareTwoSessions")]
+        public static async Task<IActionResult> CompareTwoSessions(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = InsightsRoute + "/compare/{sessionId1}/{sessionId2}")] HttpRequest req,
+        [Table(AnalysisTableName, AnalysisEntity.PartitionKeyName, Connection = ConnectionName)] TableClient tableClient,
+        string sessionId1, string sessionId2)
+        {
+            // get all of the analysis entities where session id is sessionid1, then in their analysis file sum the results and send back the dictionary of testname and score
+            var page1 = await tableClient.QueryAsync<AnalysisEntity>(filter: $"SessionId eq '{sessionId1}'").AsPages().FirstAsync();
+            var page2 = await tableClient.QueryAsync<AnalysisEntity>(filter: $"SessionId eq '{sessionId2}'").AsPages().FirstAsync();
+            List<AnalysisEntity> analysisEntities1 = page1.Values.ToList();
+            List<AnalysisEntity> analysisEntities2 = page2.Values.ToList();
+            Dictionary<string, int> dictionary1 = new Dictionary<string, int>();
+            Dictionary<string, int> dictionary2 = new Dictionary<string, int>();
+            foreach (AnalysisEntity analysisEntity in analysisEntities1)
+            {
+                Dictionary<string, int> temp = InsightsUtility.ConvertAnalysisFileToDictionary(analysisEntity.AnalysisFile);
+                foreach (KeyValuePair<string, int> pair in temp)
+                {
+                    if (dictionary1.ContainsKey(pair.Key))
+                    {
+                        dictionary1[pair.Key] += pair.Value;
+                    }
+                    else
+                    {
+                        dictionary1[pair.Key] = pair.Value;
+                    }
+                }
+            }
+            foreach (AnalysisEntity analysisEntity in analysisEntities2)
+            {
+                Dictionary<string, int> temp = InsightsUtility.ConvertAnalysisFileToDictionary(analysisEntity.AnalysisFile);
+                foreach (KeyValuePair<string, int> pair in temp)
+                {
+                    if (dictionary2.ContainsKey(pair.Key))
+                    {
+                        dictionary2[pair.Key] += pair.Value;
+                    }
+                    else
+                    {
+                        dictionary2[pair.Key] = pair.Value;
+                    }
+                }
+            }
+            List<Dictionary<string, int>> list = new List<Dictionary<string, int>>();
+            list.Add(dictionary1);
+            list.Add(dictionary2);
+            return new OkObjectResult(list);
+        }
 
+        [FunctionName("GetFailedStudentsGivenTest")]
+        public static async Task<IActionResult> GetFailedStudentsGivenTest(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = InsightsRoute + "/failed/{hostname}/{testname}")] HttpRequest req,
+        [Table(SessionTableName, SessionEntity.PartitionKeyName, Connection = ConnectionName)] TableClient tableClient1,
+        [Table(AnalysisTableName, AnalysisEntity.PartitionKeyName, Connection = ConnectionName)] TableClient tableClient2,
+        string hostname, string testname)
+        {
+            var page = await tableClient1.QueryAsync<SessionEntity>(filter: $"HostUserName eq '{hostname}'").AsPages().FirstAsync();
+            List<SessionEntity> sessionEntities = page.Values.ToList();
+            List<string> studentList = new List<string>();
+            foreach (SessionEntity sessionEntity in sessionEntities)
+            {
+                if (sessionEntity.Tests == null)
+                {
+                    continue;
+                }
+                List<string> tests = InsightsUtility.ByteToList(sessionEntity.Tests);
+                if (!tests.Contains(testname))
+                {
+                    continue;
+                }
+                var page2 = await tableClient2.QueryAsync<AnalysisEntity>(filter: $"SessionId eq '{sessionEntity.SessionId}'").AsPages().FirstAsync();
+                List<AnalysisEntity> analysisEntities = page2.Values.ToList();
+                foreach (AnalysisEntity analysisEntity in analysisEntities)
+                {
+                    Dictionary<string, int> dictionary = InsightsUtility.ConvertAnalysisFileToDictionary(analysisEntity.AnalysisFile);
+                    if (dictionary[testname] == 0)
+                    {
+                        studentList.Add(analysisEntity.UserName);
+                    }
+                }
+            }
+            return new OkObjectResult(studentList);
+        }
 
 
 
