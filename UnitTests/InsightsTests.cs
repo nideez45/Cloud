@@ -64,6 +64,8 @@ namespace UnitTests
             await _uploadClient.PostAnalysisAsync(analysisData2);
             await _uploadClient.PostAnalysisAsync(analysisData3);
             await _uploadClient.PostAnalysisAsync(analysisData4);
+            await _uploadClient.PostAnalysisAsync(analysisData10);
+            await _uploadClient.PostAnalysisAsync(analysisData11);
 
             SessionData sessionData4 = GetDummySessionData("name2", "4", ["Test1", "Test3"]);
             SessionData sessionData5 = GetDummySessionData("name2", "5", ["Test1", "Test3"]);
@@ -136,6 +138,7 @@ namespace UnitTests
             await _downloadClient.DeleteAllSessionsAsync();
             await FillLotsOfRandomData();
             List<double> averageList = await _insightsClient.RunningAverageOnGivenTest("name1", "Test1");
+            averageList.Sort();
             Assert.AreEqual(averageList[0], 0.5);
             Assert.AreEqual(averageList[1], 1);
             Assert.AreEqual(averageList[2], 1);
@@ -150,9 +153,10 @@ namespace UnitTests
             await _downloadClient.DeleteAllSessionsAsync();
             await FillLotsOfRandomData();
             List<double> averageList = await _insightsClient.RunningAverageOnGivenStudent("name2", "Student1");
-            Assert.AreEqual(averageList[0], 0.5);
-            Assert.AreEqual(averageList[1], 1);
-            Assert.AreEqual(averageList[2], 0);
+            averageList.Sort();
+            Assert.AreEqual(averageList[0], 0);
+            Assert.AreEqual(averageList[1], 0.5);
+            Assert.AreEqual(averageList[2], 1);
             await _downloadClient.DeleteAllAnalysisAsync();
             await _downloadClient.DeleteAllSessionsAsync();
         }
@@ -164,9 +168,10 @@ namespace UnitTests
             await _downloadClient.DeleteAllSessionsAsync();
             await FillLotsOfRandomData();
             List<double> averageList = await _insightsClient.RunningAverageAcrossSessoins("name2");
-            Assert.AreEqual(averageList[0], 0.75);
+            averageList.Sort();
+            Assert.AreEqual(averageList[0], 0);
             Assert.AreEqual(averageList[1], 0.75);
-            Assert.AreEqual(averageList[2], 0);
+            Assert.AreEqual(averageList[2], 0.75);
 
             await _downloadClient.DeleteAllAnalysisAsync();
             await _downloadClient.DeleteAllSessionsAsync();

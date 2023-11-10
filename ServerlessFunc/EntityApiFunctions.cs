@@ -261,7 +261,7 @@ namespace ServerlessFunc
             }
             return new OkObjectResult(studentList);
         }
-
+        // TODO - send sorted list based on date of session
         [FunctionName("RunningAverageOnGivenTest")]
         public static async Task<IActionResult> RunningAverageOnGivenTest(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = InsightsRoute + "/testaverage/{hostname}/{testname}")] HttpRequest req,
@@ -300,6 +300,7 @@ namespace ServerlessFunc
                     averageList.Add(sum / analysisEntities.Count);
                 }
             }
+              
             return new OkObjectResult(averageList);
         }
 
@@ -318,23 +319,26 @@ namespace ServerlessFunc
                 var page2 = await tableClient2.QueryAsync<AnalysisEntity>(filter: $"SessionId eq '{sessionEntity.SessionId}' and UserName eq '{studentname}'").AsPages().FirstAsync();
                 List<AnalysisEntity> analysisEntities = page2.Values.ToList();
                 double sum = 0;
+                int numberOfTests = 0;
                 foreach (AnalysisEntity analysisEntity in analysisEntities)
                 {
                     Dictionary<string, int> dictionary = InsightsUtility.ConvertAnalysisFileToDictionary(analysisEntity.AnalysisFile);
                     foreach (KeyValuePair<string, int> pair in dictionary)
                     {
                         sum += pair.Value;
+                        numberOfTests++;
                     }
                 }
-                if (analysisEntities.Count == 0)
+                if (numberOfTests == 0)
                 {
                     averageList.Add(0);
                 }
                 else
                 {
-                    averageList.Add(sum / analysisEntities.Count);
+                    averageList.Add(sum / numberOfTests);
                 }
             }
+            
             return new OkObjectResult(averageList);
         }
 
@@ -353,23 +357,26 @@ namespace ServerlessFunc
                 var page2 = await tableClient2.QueryAsync<AnalysisEntity>(filter: $"SessionId eq '{sessionEntity.SessionId}'").AsPages().FirstAsync();
                 List<AnalysisEntity> analysisEntities = page2.Values.ToList();
                 double sum = 0;
+                int numberOfTests = 0;
                 foreach (AnalysisEntity analysisEntity in analysisEntities)
                 {
                     Dictionary<string, int> dictionary = InsightsUtility.ConvertAnalysisFileToDictionary(analysisEntity.AnalysisFile);
                     foreach (KeyValuePair<string, int> pair in dictionary)
                     {
                         sum += pair.Value;
+                        numberOfTests++;
                     }
                 }
-                if (analysisEntities.Count == 0)
+                if (numberOfTests == 0)
                 {
                     averageList.Add(0);
                 }
                 else
                 {
-                    averageList.Add(sum / analysisEntities.Count);
+                    averageList.Add(sum /numberOfTests);
                 }
             }
+
             return new OkObjectResult(averageList);
         }
 

@@ -78,6 +78,7 @@ namespace UnitTests
         [TestMethod()]
         public async Task PostAndGetTestAnalysis()
         {
+            await _downloadClient.DeleteAllAnalysisAsync();
             AnalysisData analysis = new AnalysisData();
             analysis.SessionId = "1";
             analysis.UserName = "Student1";
