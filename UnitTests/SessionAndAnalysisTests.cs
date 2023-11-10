@@ -1,17 +1,10 @@
 ﻿using ServerlessFunc;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
-using static System.Net.WebRequestMethods;
 
 namespace UnitTests
 {
     [TestClass()]
-    public class Class1
+    public class SessionAndAnalysisTests
     {
         private string analysisUrl = "http://localhost:7074/api/analysis";
         private string submissionUrl = "http://localhost:7074/api/submission";
@@ -19,10 +12,10 @@ namespace UnitTests
         private DownloadApi _downloadClient;
         private UploadApi _uploadClient;
 
-        public Class1()
+        public SessionAndAnalysisTests()
         {
-            _downloadClient = new DownloadApi(sessionUrl,submissionUrl,analysisUrl);
-            _uploadClient = new UploadApi(sessionUrl,submissionUrl, analysisUrl);
+            _downloadClient = new DownloadApi(sessionUrl, submissionUrl, analysisUrl);
+            _uploadClient = new UploadApi(sessionUrl, submissionUrl, analysisUrl);
         }
 
         public SessionData GetDummySessionData()
@@ -62,18 +55,18 @@ namespace UnitTests
         [TestMethod()]
         public async Task PostAndGetTestSubmission()
         {
-            
+
             SubmissionData submission = new SubmissionData();
             submission.SessionId = "1";
             submission.UserName = "Student1";
             submission.ZippedDllFiles = Encoding.ASCII.GetBytes("demotext");
             SubmissionEntity postEntity = await _uploadClient.PostSubmissionAsync(submission);
-            
+
             byte[] submissionFile = await _downloadClient.GetSubmissionByUserNameAndSessionIdAsync(submission.UserName, submission.SessionId);
             string text = Encoding.ASCII.GetString(submissionFile);
             await _downloadClient.DeleteAllSubmissionsAsync();
             Assert.AreEqual(text, "demotext");
-          
+
         }
         [TestMethod()]
         public async Task PostAndGetTestAnalysis()
@@ -91,7 +84,7 @@ namespace UnitTests
             Assert.AreEqual(entities[0].UserName, postEntity.UserName);
             string text = Encoding.ASCII.GetString(entities[0].AnalysisFile);
             Assert.AreEqual("demotext", text);
-            
+
         }
     }
 }

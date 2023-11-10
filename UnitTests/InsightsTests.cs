@@ -42,11 +42,11 @@ namespace UnitTests
             sessionData.Tests = InsightsUtility.ListToByte(tests);
             return sessionData;
         }
-        public SessionData GetDummySessionDataWithStudents(string hostName, string sessionId, List<string> tests,List<string> students)
+        public SessionData GetDummySessionDataWithStudents(string hostName, string sessionId, List<string> tests, List<string> students)
         {
             SessionData sessionData = new SessionData();
             sessionData.HostUserName = hostName;
-            sessionData.SessionId = sessionId;           
+            sessionData.SessionId = sessionId;
             sessionData.Tests = InsightsUtility.ListToByte(tests);
             sessionData.Students = InsightsUtility.ListToByte(students);
             return sessionData;

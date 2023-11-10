@@ -90,7 +90,7 @@ namespace ServerlessFunc
                 var page = await tableClient.QueryAsync<SessionEntity>(filter: $"HostUserName eq '{hostname}'").AsPages().FirstAsync();
                 return new OkObjectResult(page.Values);
             }
-            catch (Exception ex)
+            catch
             {
                 return new StatusCodeResult(StatusCodes.Status500InternalServerError);
             }
@@ -397,56 +397,56 @@ namespace ServerlessFunc
             List<string> students = InsightsUtility.ByteToList(sessionEntity.Students);
             var page2 = await tableClient2.QueryAsync<AnalysisEntity>(filter: $"SessionId eq '{sessionid}'").AsPages().FirstAsync();
             List<AnalysisEntity> analysisEntities = page2.Values.ToList();
-            foreach(AnalysisEntity analysisEntity in analysisEntities)
+            foreach (AnalysisEntity analysisEntity in analysisEntities)
             {
                 students.Remove(analysisEntity.UserName);
             }
             return new OkObjectResult(students);
         }
         /*[FunctionName("GetUsersbyTestname")]
-        public static async Task<IActionResult> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = AnalysisRoute + "/{sessionid}/{testname}")] HttpRequest req,
-        string sessionid,
-        string testname,
-        ILogger log)
-        {
-            try
-            {
-                BlobServiceClient blobServiceClient = new BlobServiceClient(connectionString);
-                BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(AnalysisContainerName);
+		public static async Task<IActionResult> Run(
+		[HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = AnalysisRoute + "/{sessionid}/{testname}")] HttpRequest req,
+		string sessionid,
+		string testname,
+		ILogger log)
+		{
+			try
+			{
+				BlobServiceClient blobServiceClient = new BlobServiceClient(connectionString);
+				BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(AnalysisContainerName);
 
-                List<string> results = new List<string>();
+				List<string> results = new List<string>();
 
-                await foreach (BlobItem blobItem in containerClient.GetBlobsAsync())
-                {
-                    if (blobItem.Name.StartsWith(sessionid))
-                    {
-                        BlobClient blobClient = containerClient.GetBlobClient(blobItem.Name);
-                        Response<BlobDownloadInfo> response = await blobClient.DownloadAsync();
-                        BlobDownloadInfo blobInfo = response.Value;
+				await foreach (BlobItem blobItem in containerClient.GetBlobsAsync())
+				{
+					if (blobItem.Name.StartsWith(sessionid))
+					{
+						BlobClient blobClient = containerClient.GetBlobClient(blobItem.Name);
+						Response<BlobDownloadInfo> response = await blobClient.DownloadAsync();
+						BlobDownloadInfo blobInfo = response.Value;
 
-                        using (MemoryStream memoryStream = new MemoryStream())
-                        {
-                            await blobInfo.Content.CopyToAsync(memoryStream);
-                            string jsonContent = System.Text.Encoding.UTF8.GetString(memoryStream.ToArray());
-                            Dictionary<string, int> resultData = JsonConvert.DeserializeObject<Dictionary<string, int>>(jsonContent);
+						using (MemoryStream memoryStream = new MemoryStream())
+						{
+							await blobInfo.Content.CopyToAsync(memoryStream);
+							string jsonContent = System.Text.Encoding.UTF8.GetString(memoryStream.ToArray());
+							Dictionary<string, int> resultData = JsonConvert.DeserializeObject<Dictionary<string, int>>(jsonContent);
 
-                            if (resultData.ContainsKey(testname) && resultData[testname] == 1)
-                            {
-                                results.Add(blobItem.Name);
-                            }
-                        }
-                    }
-                }
+							if (resultData.ContainsKey(testname) && resultData[testname] == 1)
+							{
+								results.Add(blobItem.Name);
+							}
+						}
+					}
+				}
 
-                return new OkObjectResult(results);
-            }
-            catch (Exception ex)
-            {
-                log.LogError(ex, "An error occurred while processing the request.");
-                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
-            }
-        }*/
+				return new OkObjectResult(results);
+			}
+			catch (Exception ex)
+			{
+				log.LogError(ex, "An error occurred while processing the request.");
+				return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+			}
+		}*/
 
 
 
