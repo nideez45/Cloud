@@ -7,21 +7,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
-using Microsoft.WindowsAzure.Storage.Blob;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
 using System.Threading.Tasks;
-using Azure.Storage.Blobs;
-using static System.Net.Mime.MediaTypeNames;
-using Azure.Storage.Blobs.Models;
-using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
-using System.Diagnostics.Metrics;
 
 namespace ServerlessFunc
 {
@@ -71,14 +63,14 @@ namespace ServerlessFunc
         ILogger log)
         {
             byte[] dllBytes;
-           
+
             var streamReader = new StreamReader(req.Body);
 
             var requestBody = await streamReader.ReadToEndAsync();
             SubmissionData data = JsonSerializer.Deserialize<SubmissionData>(requestBody);
             dllBytes = data.ZippedDllFiles;
-            
-            await BlobUtility.UploadSubmissionToBlob(data.SessionId +'/'+ data.UserName, dllBytes,connectionString,DllContainerName);
+
+            await BlobUtility.UploadSubmissionToBlob(data.SessionId + '/' + data.UserName, dllBytes, connectionString, DllContainerName);
 
             SubmissionEntity value = new SubmissionEntity(data.SessionId, data.UserName);
             await entityTable.AddAsync(value);
@@ -91,7 +83,7 @@ namespace ServerlessFunc
         public static async Task<IActionResult> GetSessionsbyHostname(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = SessionRoute + "/{hostname}")] HttpRequest req,
         [Table(SessionTableName, SessionEntity.PartitionKeyName, Connection = ConnectionName)] TableClient tableClient,
-        string hostname,ILogger log)
+        string hostname, ILogger log)
         {
             try
             {
@@ -109,7 +101,7 @@ namespace ServerlessFunc
         [FunctionName("GetSubmissionbyUsernameAndSessionId")]
         public static async Task<IActionResult> GetSubmissionbyUsernameAndSessionId(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = SubmissionRoute + "/{sessionId}/{username}")] HttpRequest req,
-        string username,string sessionId)
+        string username, string sessionId)
         {
             byte[] zippedDlls = await BlobUtility.GetBlobContentAsync(DllContainerName, sessionId + '/' + username, connectionString);
             return new OkObjectResult(zippedDlls);
@@ -119,8 +111,8 @@ namespace ServerlessFunc
         public static async Task<IActionResult> GetAnalysisFilebyUsernameAndSessionId(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = AnalysisRoute + "/{sessionId}/{username}")] HttpRequest req,
         [Table(AnalysisTableName, AnalysisEntity.PartitionKeyName, Connection = ConnectionName)] TableClient tableClient,
-        string username,string sessionId)
-        { 
+        string username, string sessionId)
+        {
             var page = await tableClient.QueryAsync<AnalysisEntity>(filter: $"UserName eq '{username}' and SessionId eq '{sessionId}'").AsPages().FirstAsync();
             return new OkObjectResult(page.Values);
         }
@@ -193,7 +185,6 @@ namespace ServerlessFunc
         [Table(AnalysisTableName, AnalysisEntity.PartitionKeyName, Connection = ConnectionName)] TableClient tableClient,
         string sessionId1, string sessionId2)
         {
-            // get all of the analysis entities where session id is sessionid1, then in their analysis file sum the results and send back the dictionary of testname and score
             var page1 = await tableClient.QueryAsync<AnalysisEntity>(filter: $"SessionId eq '{sessionId1}'").AsPages().FirstAsync();
             var page2 = await tableClient.QueryAsync<AnalysisEntity>(filter: $"SessionId eq '{sessionId2}'").AsPages().FirstAsync();
             List<AnalysisEntity> analysisEntities1 = page1.Values.ToList();
@@ -271,6 +262,116 @@ namespace ServerlessFunc
             return new OkObjectResult(studentList);
         }
 
+        [FunctionName("RunningAverageOnGivenTest")]
+        public static async Task<IActionResult> RunningAverageOnGivenTest(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = InsightsRoute + "/testaverage/{hostname}/{testname}")] HttpRequest req,
+        [Table(SessionTableName, SessionEntity.PartitionKeyName, Connection = ConnectionName)] TableClient tableClient1,
+        [Table(AnalysisTableName, AnalysisEntity.PartitionKeyName, Connection = ConnectionName)] TableClient tableClient2,
+        string hostname, string testname)
+        {
+            var page = await tableClient1.QueryAsync<SessionEntity>(filter: $"HostUserName eq '{hostname}'").AsPages().FirstAsync();
+            List<SessionEntity> sessionEntities = page.Values.ToList();
+            List<double> averageList = new List<double>();
+            foreach (SessionEntity sessionEntity in sessionEntities)
+            {
+                if (sessionEntity.Tests == null)
+                {
+                    continue;
+                }
+                List<string> tests = InsightsUtility.ByteToList(sessionEntity.Tests);
+                if (!tests.Contains(testname))
+                {
+                    continue;
+                }
+                var page2 = await tableClient2.QueryAsync<AnalysisEntity>(filter: $"SessionId eq '{sessionEntity.SessionId}'").AsPages().FirstAsync();
+                List<AnalysisEntity> analysisEntities = page2.Values.ToList();
+                double sum = 0;
+                foreach (AnalysisEntity analysisEntity in analysisEntities)
+                {
+                    Dictionary<string, int> dictionary = InsightsUtility.ConvertAnalysisFileToDictionary(analysisEntity.AnalysisFile);
+                    sum += dictionary[testname];
+                }
+                if (analysisEntities.Count == 0)
+                {
+                    averageList.Add(0);
+                }
+                else
+                {
+                    averageList.Add(sum / analysisEntities.Count);
+                }
+            }
+            return new OkObjectResult(averageList);
+        }
+
+        [FunctionName("RunningAverageOnGivenStudent")]
+        public static async Task<IActionResult> RunningAverageOnGivenStudent(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = InsightsRoute + "/studentaverage/{hostname}/{studentname}")] HttpRequest req,
+        [Table(SessionTableName, SessionEntity.PartitionKeyName, Connection = ConnectionName)] TableClient tableClient1,
+        [Table(AnalysisTableName, AnalysisEntity.PartitionKeyName, Connection = ConnectionName)] TableClient tableClient2,
+        string hostname, string studentname)
+        {
+            var page = await tableClient1.QueryAsync<SessionEntity>(filter: $"HostUserName eq '{hostname}'").AsPages().FirstAsync();
+            List<SessionEntity> sessionEntities = page.Values.ToList();
+            List<double> averageList = new List<double>();
+            foreach (SessionEntity sessionEntity in sessionEntities)
+            {
+                var page2 = await tableClient2.QueryAsync<AnalysisEntity>(filter: $"SessionId eq '{sessionEntity.SessionId}' and UserName eq '{studentname}'").AsPages().FirstAsync();
+                List<AnalysisEntity> analysisEntities = page2.Values.ToList();
+                double sum = 0;
+                foreach (AnalysisEntity analysisEntity in analysisEntities)
+                {
+                    Dictionary<string, int> dictionary = InsightsUtility.ConvertAnalysisFileToDictionary(analysisEntity.AnalysisFile);
+                    foreach (KeyValuePair<string, int> pair in dictionary)
+                    {
+                        sum += pair.Value;
+                    }
+                }
+                if (analysisEntities.Count == 0)
+                {
+                    averageList.Add(0);
+                }
+                else
+                {
+                    averageList.Add(sum / analysisEntities.Count);
+                }
+            }
+            return new OkObjectResult(averageList);
+        }
+
+        [FunctionName("RunningAverageAcrossSessoins")]
+        public static async Task<IActionResult> RunningAverageAcrossSessoins(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = InsightsRoute + "/sessionsaverage/{hostname}")] HttpRequest req,
+        [Table(SessionTableName, SessionEntity.PartitionKeyName, Connection = ConnectionName)] TableClient tableClient1,
+        [Table(AnalysisTableName, AnalysisEntity.PartitionKeyName, Connection = ConnectionName)] TableClient tableClient2,
+        string hostname)
+        {
+            var page = await tableClient1.QueryAsync<SessionEntity>(filter: $"HostUserName eq '{hostname}'").AsPages().FirstAsync();
+            List<SessionEntity> sessionEntities = page.Values.ToList();
+            List<double> averageList = new List<double>();
+            foreach (SessionEntity sessionEntity in sessionEntities)
+            {
+                var page2 = await tableClient2.QueryAsync<AnalysisEntity>(filter: $"SessionId eq '{sessionEntity.SessionId}'").AsPages().FirstAsync();
+                List<AnalysisEntity> analysisEntities = page2.Values.ToList();
+                double sum = 0;
+                foreach (AnalysisEntity analysisEntity in analysisEntities)
+                {
+                    Dictionary<string, int> dictionary = InsightsUtility.ConvertAnalysisFileToDictionary(analysisEntity.AnalysisFile);
+                    foreach (KeyValuePair<string, int> pair in dictionary)
+                    {
+                        sum += pair.Value;
+                    }
+                }
+                if (analysisEntities.Count == 0)
+                {
+                    averageList.Add(0);
+                }
+                else
+                {
+                    averageList.Add(sum / analysisEntities.Count);
+                }
+            }
+            return new OkObjectResult(averageList);
+        }
 
 
 
@@ -320,8 +421,8 @@ namespace ServerlessFunc
             }
         }*/
 
-        
 
-        
+
+
     }
 }
