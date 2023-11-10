@@ -42,7 +42,15 @@ namespace UnitTests
             sessionData.Tests = InsightsUtility.ListToByte(tests);
             return sessionData;
         }
-
+        public SessionData GetDummySessionDataWithStudents(string hostName, string sessionId, List<string> tests,List<string> students)
+        {
+            SessionData sessionData = new SessionData();
+            sessionData.HostUserName = hostName;
+            sessionData.SessionId = sessionId;           
+            sessionData.Tests = InsightsUtility.ListToByte(tests);
+            sessionData.Students = InsightsUtility.ListToByte(students);
+            return sessionData;
+        }
 
         public async Task FillLotsOfRandomData()
         {
@@ -175,6 +183,22 @@ namespace UnitTests
 
             await _downloadClient.DeleteAllAnalysisAsync();
             await _downloadClient.DeleteAllSessionsAsync();
+        }
+
+        [TestMethod()]
+        public async Task StudentsWithoutAnalysisTest()
+        {
+            await _downloadClient.DeleteAllAnalysisAsync();
+            await _downloadClient.DeleteAllSessionsAsync();
+            SessionData sessionData = GetDummySessionDataWithStudents("name1", "1", ["Test1", "Test2"], ["Student1", "Student2"]);
+            await _uploadClient.PostSessionAsync(sessionData);
+            AnalysisData analysisData1 = GetDummyAnalysisData("1", "Student1", new Dictionary<string, int>() { { "Test1", 0 }, { "Test2", 1 } });
+            await _uploadClient.PostAnalysisAsync(analysisData1);
+            List<string> studentsList = await _insightsClient.UsersWithoutAnalysisGivenSession("1");
+            await _downloadClient.DeleteAllAnalysisAsync();
+            await _downloadClient.DeleteAllSessionsAsync();
+            Assert.AreEqual(studentsList.Count, 1);
+            Assert.AreEqual(studentsList[0], "Student2");
         }
     }
 }

@@ -66,7 +66,7 @@ namespace ServerlessFunc
             List<double> averageList = JsonSerializer.Deserialize<List<double>>(result, options);
             return averageList;
         }
-
+        // TODO - return after multiplying with number of students
         public async Task<List<double>> RunningAverageAcrossSessoins(string hostname)
         {
             var response = await _entityClient.GetAsync(_insightsRoute + $"/sessionsaverage/{hostname}");
@@ -78,6 +78,19 @@ namespace ServerlessFunc
             };
             List<double> averageList = JsonSerializer.Deserialize<List<double>>(result, options);
             return averageList;
+        }
+
+        public async Task<List<string>> UsersWithoutAnalysisGivenSession(string sessionId)
+        {
+            var response = await _entityClient.GetAsync(_insightsRoute + $"/StudentsWithoutAnalysis/{sessionId}");
+            response.EnsureSuccessStatusCode();
+            var result = await response.Content.ReadAsStringAsync();
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+            };
+            List<string> studentsList = JsonSerializer.Deserialize<List<string>>(result, options);
+            return studentsList;
         }
     }
 }
