@@ -382,9 +382,27 @@ namespace ServerlessFunc
             return new OkObjectResult(averageList);
         }
 
-
-
-
+        [FunctionName("GetUsersWithoutAnalysisGivenSession")]
+        public static async Task<IActionResult> Run(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = InsightsRoute + "/StudentsWithoutAnalysis/{sessionid}")] HttpRequest req,
+        [Table(SessionTableName, SessionEntity.PartitionKeyName, Connection = ConnectionName)] TableClient tableClient1,
+        [Table(AnalysisTableName, AnalysisEntity.PartitionKeyName, Connection = ConnectionName)] TableClient tableClient2,
+        string sessionid,
+        ILogger log
+            )
+        {
+            var page = await tableClient1.QueryAsync<SessionEntity>(filter: $"SessionId eq '{sessionid}'").AsPages().FirstAsync();
+            List<SessionEntity> sessionEntities = page.Values.ToList();
+            SessionEntity sessionEntity = sessionEntities[0];
+            List<string> students = InsightsUtility.ByteToList(sessionEntity.Students);
+            var page2 = await tableClient2.QueryAsync<AnalysisEntity>(filter: $"SessionId eq '{sessionid}'").AsPages().FirstAsync();
+            List<AnalysisEntity> analysisEntities = page2.Values.ToList();
+            foreach(AnalysisEntity analysisEntity in analysisEntities)
+            {
+                students.Remove(analysisEntity.UserName);
+            }
+            return new OkObjectResult(students);
+        }
         /*[FunctionName("GetUsersbyTestname")]
         public static async Task<IActionResult> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = AnalysisRoute + "/{sessionid}/{testname}")] HttpRequest req,
