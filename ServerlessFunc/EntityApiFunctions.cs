@@ -261,7 +261,6 @@ namespace ServerlessFunc
             }
             return new OkObjectResult(studentList);
         }
-        // TODO - send sorted list based on date of session
         [FunctionName("RunningAverageOnGivenTest")]
         public static async Task<IActionResult> RunningAverageOnGivenTest(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = InsightsRoute + "/testaverage/{hostname}/{testname}")] HttpRequest req,
@@ -272,6 +271,7 @@ namespace ServerlessFunc
             var page = await tableClient1.QueryAsync<SessionEntity>(filter: $"HostUserName eq '{hostname}'").AsPages().FirstAsync();
             List<SessionEntity> sessionEntities = page.Values.ToList();
             List<double> averageList = new List<double>();
+            sessionEntities.Sort((x, y) => DateTime.Compare(x.Timestamp.Value.DateTime, y.Timestamp.Value.DateTime));
             foreach (SessionEntity sessionEntity in sessionEntities)
             {
                 if (sessionEntity.Tests == null)
@@ -297,10 +297,10 @@ namespace ServerlessFunc
                 }
                 else
                 {
-                    averageList.Add(sum / analysisEntities.Count);
+                    averageList.Add((sum / analysisEntities.Count) * 100);
                 }
             }
-              
+
             return new OkObjectResult(averageList);
         }
 
@@ -314,6 +314,7 @@ namespace ServerlessFunc
             var page = await tableClient1.QueryAsync<SessionEntity>(filter: $"HostUserName eq '{hostname}'").AsPages().FirstAsync();
             List<SessionEntity> sessionEntities = page.Values.ToList();
             List<double> averageList = new List<double>();
+            sessionEntities.Sort((x, y) => DateTime.Compare(x.Timestamp.Value.DateTime, y.Timestamp.Value.DateTime));
             foreach (SessionEntity sessionEntity in sessionEntities)
             {
                 var page2 = await tableClient2.QueryAsync<AnalysisEntity>(filter: $"SessionId eq '{sessionEntity.SessionId}' and UserName eq '{studentname}'").AsPages().FirstAsync();
@@ -335,10 +336,10 @@ namespace ServerlessFunc
                 }
                 else
                 {
-                    averageList.Add(sum / numberOfTests);
+                    averageList.Add((sum / numberOfTests) * 100);
                 }
             }
-            
+
             return new OkObjectResult(averageList);
         }
 
@@ -352,6 +353,7 @@ namespace ServerlessFunc
             var page = await tableClient1.QueryAsync<SessionEntity>(filter: $"HostUserName eq '{hostname}'").AsPages().FirstAsync();
             List<SessionEntity> sessionEntities = page.Values.ToList();
             List<double> averageList = new List<double>();
+            sessionEntities.Sort((x, y) => DateTime.Compare(x.Timestamp.Value.DateTime, y.Timestamp.Value.DateTime));
             foreach (SessionEntity sessionEntity in sessionEntities)
             {
                 var page2 = await tableClient2.QueryAsync<AnalysisEntity>(filter: $"SessionId eq '{sessionEntity.SessionId}'").AsPages().FirstAsync();
@@ -373,7 +375,7 @@ namespace ServerlessFunc
                 }
                 else
                 {
-                    averageList.Add(sum /numberOfTests);
+                    averageList.Add((sum / numberOfTests) * 100);
                 }
             }
 

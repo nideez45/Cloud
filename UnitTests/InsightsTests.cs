@@ -138,10 +138,9 @@ namespace UnitTests
             await _downloadClient.DeleteAllSessionsAsync();
             await FillLotsOfRandomData();
             List<double> averageList = await _insightsClient.RunningAverageOnGivenTest("name1", "Test1");
-            averageList.Sort();
-            Assert.AreEqual(averageList[0], 0.5);
-            Assert.AreEqual(averageList[1], 1);
-            Assert.AreEqual(averageList[2], 1);
+            Assert.AreEqual(averageList[0], 50);
+            Assert.AreEqual(averageList[1], 100);
+            Assert.AreEqual(averageList[2], 100);
             await _downloadClient.DeleteAllAnalysisAsync();
             await _downloadClient.DeleteAllSessionsAsync();
         }
@@ -153,10 +152,9 @@ namespace UnitTests
             await _downloadClient.DeleteAllSessionsAsync();
             await FillLotsOfRandomData();
             List<double> averageList = await _insightsClient.RunningAverageOnGivenStudent("name2", "Student1");
-            averageList.Sort();
-            Assert.AreEqual(averageList[0], 0);
-            Assert.AreEqual(averageList[1], 0.5);
-            Assert.AreEqual(averageList[2], 1);
+            Assert.AreEqual(averageList[0], 50);
+            Assert.AreEqual(averageList[1], 100);
+            Assert.AreEqual(averageList[2], 0);
             await _downloadClient.DeleteAllAnalysisAsync();
             await _downloadClient.DeleteAllSessionsAsync();
         }
@@ -170,8 +168,8 @@ namespace UnitTests
             List<double> averageList = await _insightsClient.RunningAverageAcrossSessoins("name2");
             averageList.Sort();
             Assert.AreEqual(averageList[0], 0);
-            Assert.AreEqual(averageList[1], 0.75);
-            Assert.AreEqual(averageList[2], 0.75);
+            Assert.AreEqual(averageList[1], 75);
+            Assert.AreEqual(averageList[2], 75);
 
             await _downloadClient.DeleteAllAnalysisAsync();
             await _downloadClient.DeleteAllSessionsAsync();
