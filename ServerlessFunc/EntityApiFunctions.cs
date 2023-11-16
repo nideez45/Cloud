@@ -442,7 +442,7 @@ namespace ServerlessFunc
         }
 
         [FunctionName("GetBestWorstGivenSession")]
-        public static async Task<IActionResult> RunningStudentScore(
+        public static async Task<IActionResult> RunningBestWorst(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = InsightsRoute + "/BestWorst/{sessionid}")] HttpRequest req,
         [Table(AnalysisTableName, AnalysisEntity.PartitionKeyName, Connection = ConnectionName)] TableClient tableClient1,
         string sessionid,
@@ -486,6 +486,67 @@ namespace ServerlessFunc
             return new OkObjectResult(result);
         }
 
+        [FunctionName("GetStudentScoreGivenSession")]
+        public static async Task<IActionResult> RunningStudentScore(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = InsightsRoute + "/StudentScore/{sessionid}")] HttpRequest req,
+        [Table(AnalysisTableName, AnalysisEntity.PartitionKeyName, Connection = ConnectionName)] TableClient tableClient1,
+        string sessionid,
+        ILogger log
+            )
+        {
+            var page = await tableClient1.QueryAsync<AnalysisEntity>(filter: $"SessionId eq '{sessionid}'").AsPages().FirstAsync();
+            List<AnalysisEntity> analysisEntities = page.Values.ToList();
+            List<string> result = new();
+            Dictionary<string, int> StudentScore = new();
+            foreach (AnalysisEntity analysisEntity in analysisEntities)
+            {
+                Dictionary<string, List<AnalyzerResult>> dictionary = InsightsUtility.ConvertAnalysisFileToDictionary(analysisEntity.AnalysisFile);
+                foreach (var kvp in dictionary)
+                {
+                    foreach (var analyserResult in kvp.Value)
+                    {
+                        if (!StudentScore.ContainsKey(analysisEntity.UserName))
+                        {
+                            StudentScore[analysisEntity.UserName] = 0;
+                        }
+                        StudentScore[analysisEntity.UserName] += analyserResult.Verdict;
+                    }
+                }
+
+            }
+            return new OkObjectResult(StudentScore);
+        }
+
+        [FunctionName("GetTestScoreGivenSession")]
+        public static async Task<IActionResult> RunningTestScore(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = InsightsRoute + "/TestScore/{sessionid}")] HttpRequest req,
+        [Table(AnalysisTableName, AnalysisEntity.PartitionKeyName, Connection = ConnectionName)] TableClient tableClient1,
+        string sessionid,
+        ILogger log
+            )
+        {
+            var page = await tableClient1.QueryAsync<AnalysisEntity>(filter: $"SessionId eq '{sessionid}'").AsPages().FirstAsync();
+            List<AnalysisEntity> analysisEntities = page.Values.ToList();
+            List<string> result = new();
+            Dictionary<string, int> TestScore = new();
+            foreach (AnalysisEntity analysisEntity in analysisEntities)
+            {
+                Dictionary<string, List<AnalyzerResult>> dictionary = InsightsUtility.ConvertAnalysisFileToDictionary(analysisEntity.AnalysisFile);
+                foreach (var kvp in dictionary)
+                {
+                    foreach (var analyserResult in kvp.Value)
+                    {
+                        if (!TestScore.ContainsKey(analyserResult.AnalyserID))
+                        {
+                            TestScore[analyserResult.AnalyserID] = 0;
+                        }
+                        TestScore[analyserResult.AnalyserID] += analyserResult.Verdict;
+                    }
+                }
+
+            }
+            return new OkObjectResult(TestScore);
+        }
 
 
     }

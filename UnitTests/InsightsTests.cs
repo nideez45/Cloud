@@ -198,5 +198,31 @@ namespace UnitTests
             await _downloadClient.DeleteAllAnalysisAsync(); 
             await _downloadClient.DeleteAllSessionsAsync();
         }
+
+        [TestMethod()]
+        public async Task StudentScoreTest()
+        {
+            
+            await FillTestData();
+            Dictionary<string,int> StudentScore = await _insightsClient.GetStudentScoreGivenSession("1");
+            Assert.AreEqual(2, StudentScore.Count);
+            Assert.AreEqual(StudentScore["Student1"], 1);
+            Assert.AreEqual(StudentScore["Student2"], 1);
+            await _downloadClient.DeleteAllAnalysisAsync();
+            await _downloadClient.DeleteAllSessionsAsync();
+        }
+
+        [TestMethod()]
+        public async Task TestScoreTest()
+        {
+
+            await FillTestData();
+            Dictionary<string, int> TestScore = await _insightsClient.GetTestScoreGivenSession("1");
+            Assert.AreEqual(2, TestScore.Count);
+            Assert.AreEqual(TestScore["101"], 1);
+            Assert.AreEqual(TestScore["102"], 1);
+            await _downloadClient.DeleteAllAnalysisAsync();
+            await _downloadClient.DeleteAllSessionsAsync();
+        }
     }
 }

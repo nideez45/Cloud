@@ -92,6 +92,32 @@ namespace ServerlessFunc
             return studentsList;
         }
 
+        public async Task<Dictionary<string, int>> GetStudentScoreGivenSession(string sessionId)
+        {
+            var response = await _entityClient.GetAsync(_insightsRoute + $"/StudentScore/{sessionId}");
+            response.EnsureSuccessStatusCode();
+            var result = await response.Content.ReadAsStringAsync();
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+            };
+            Dictionary<string,int> StudentScore = JsonSerializer.Deserialize<Dictionary<string,int>>(result, options);
+            return StudentScore;
+        }
+
+        public async Task<Dictionary<string, int>> GetTestScoreGivenSession(string sessionId)
+        {
+            var response = await _entityClient.GetAsync(_insightsRoute + $"/TestScore/{sessionId}");
+            response.EnsureSuccessStatusCode();
+            var result = await response.Content.ReadAsStringAsync();
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+            };
+            Dictionary<string, int> TestScore = JsonSerializer.Deserialize<Dictionary<string, int>>(result, options);
+            return TestScore;
+        }
+
         public async Task<List<string>> GetBestWorstGivenSession(string sessionId)
         {
             var response = await _entityClient.GetAsync(_insightsRoute + $"/BestWorst/{sessionId}");
