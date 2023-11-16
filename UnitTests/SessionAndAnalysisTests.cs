@@ -25,8 +25,8 @@ namespace UnitTests
             sessionData.SessionId = "1";
             List<string> Test = new List<string>
             {
-                "Test1",
-                "Test2"
+                "101",
+                "102"
             };
             sessionData.Tests = InsightsUtility.ListToByte(Test);
             List<string> Student = new List<string>
@@ -35,6 +35,12 @@ namespace UnitTests
                 "Student2"
             };
             sessionData.Students = InsightsUtility.ListToByte(Student);
+            List<Tuple<string, string>> NameToID = new List<Tuple<string, string>>
+            {
+                Tuple.Create("Test1", "101"),
+                Tuple.Create("Test2", "102")
+            };
+            sessionData.TestNameToID = InsightsUtility.ListTupleToByte(NameToID);
             return sessionData;
         }
 
