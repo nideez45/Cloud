@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
@@ -28,10 +29,21 @@ namespace ServerlessFunc
             return byteArray;
         }
 
-        public static Dictionary<string, int> ConvertAnalysisFileToDictionary(byte[] analysisFile)
+        public static byte[] ListTupleToByte(List<Tuple<string,string>> list) 
+        {
+            string jsonString = JsonSerializer.Serialize(list);
+            return Encoding.UTF8.GetBytes(jsonString);
+        }
+
+        public static List<Tuple<string, string>> ByteToTupleList(byte[] list)
+        {
+            string jsonString = Encoding.UTF8.GetString(list);
+            return JsonSerializer.Deserialize<List<Tuple<string, string>>>(jsonString);
+        }
+        public static Dictionary<string, List<AnalyzerResult>> ConvertAnalysisFileToDictionary(byte[] analysisFile)
         {
             string jsonString = Encoding.UTF8.GetString(analysisFile);
-            Dictionary<string, int> dictionary = JsonSerializer.Deserialize<Dictionary<string, int>>(jsonString);
+            Dictionary<string, List<AnalyzerResult>> dictionary = JsonSerializer.Deserialize<Dictionary<string, List<AnalyzerResult>>>(jsonString);
             return dictionary;
         }
 
