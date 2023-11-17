@@ -26,7 +26,7 @@ namespace ServerlessFunc
         private const string SessionRoute = "session";
         private const string SubmissionRoute = "submission";
         private const string DllContainerName = "dll";
-        private const string connectionString = "UseDevelopmentStorage=true";
+        private const string connectionString = "DefaultEndpointsProtocol=https;AccountName=analysecloud;AccountKey=yJPvpPpyE35TsvOCxKqlHuRg7Co2eMKHWJn060WqQ1TCdEbv6ASJi/ggKGW+73tWhAvtCdJzD5Ua+AStIOyihQ==;EndpointSuffix=core.windows.net";
         private const string AnalysisRoute = "analysis";
         private const string InsightsRoute = "insights";
 

@@ -48,20 +48,25 @@ namespace UnitTests
 
         public async Task PostAndGetTestSession()
         {
-            await _downloadClient.DeleteAllSessionsAsync();
+           
+
             SessionData sessionData = GetDummySessionData();
             await _uploadClient.PostSessionAsync(sessionData);
+            
             IReadOnlyList<SessionEntity> sessionEntity = await _downloadClient.GetSessionsByHostNameAsync("name1");
             await _downloadClient.DeleteAllSessionsAsync();
+            await Task.Delay(10000);
+
             Assert.AreEqual(1, sessionEntity.Count);
             CollectionAssert.AreEqual(sessionData.Students, sessionEntity[0].Students, "Students list mismatch");
             CollectionAssert.AreEqual(sessionData.Tests, sessionEntity[0].Tests, "Tests list mismatch");
+            
 
         }
         [TestMethod()]
         public async Task PostAndGetTestSubmission()
         {
-
+            await _downloadClient.DeleteAllSubmissionsAsync();
             SubmissionData submission = new SubmissionData();
             submission.SessionId = "1";
             submission.UserName = "Student1";
