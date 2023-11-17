@@ -35,5 +35,35 @@ namespace UnitTests
             Assert.AreEqual(result1.Verdict, result2.Verdict);
             Assert.AreEqual(result1.ErrorMessage, result2.ErrorMessage);
         }
+
+        [TestMethod()]
+        public void InsightsUtilityTest1()
+        {
+            List<string> list = new List<string>
+            {
+                "text1",
+                "text2",
+                "text3"
+            };
+            byte[] byteArray = InsightsUtility.ListToByte(list);
+            List<string> deserializedList = InsightsUtility.ByteToList(byteArray);
+            Assert.AreEqual(3,deserializedList.Count);
+            for(int i = 0; i < deserializedList.Count; i++)
+            {
+                Assert.AreEqual(list[i], deserializedList[i]);
+            }
+        }
+
+        [TestMethod()]
+        public void InsightsUtilityTest2()
+        {
+            Dictionary<string, List<AnalyzerResult>> analysis = InsightsTests.GetAnalysisResult(1, 0);
+            byte[] analysisResultBytes = InsightsUtility.ConvertDictionaryToAnalysisFile(analysis);
+            Dictionary<string, List<AnalyzerResult>> Deserializedanalysis = InsightsUtility.ConvertAnalysisFileToDictionary(analysisResultBytes);
+            Assert.AreEqual(analysis.Count, Deserializedanalysis.Count);
+            Assert.AreEqual(analysis["File1"][0].AnalyserID, Deserializedanalysis["File1"][0].AnalyserID);
+            Assert.AreEqual(analysis["File1"][0].Verdict, Deserializedanalysis["File1"][0].Verdict);
+            Assert.AreEqual(analysis["File1"][0].ErrorMessage, Deserializedanalysis["File1"][0].ErrorMessage);
+        }
     }
 }

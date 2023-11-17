@@ -35,16 +35,17 @@ namespace ServerlessFunc
             return Encoding.UTF8.GetBytes(jsonString);
         }
 
-        public static List<Tuple<string, string>> ByteToTupleList(byte[] list)
-        {
-            string jsonString = Encoding.UTF8.GetString(list);
-            return JsonSerializer.Deserialize<List<Tuple<string, string>>>(jsonString);
-        }
         public static Dictionary<string, List<AnalyzerResult>> ConvertAnalysisFileToDictionary(byte[] analysisFile)
         {
             string jsonString = Encoding.UTF8.GetString(analysisFile);
             Dictionary<string, List<AnalyzerResult>> dictionary = JsonSerializer.Deserialize<Dictionary<string, List<AnalyzerResult>>>(jsonString);
             return dictionary;
+        }
+
+        public static byte[] ConvertDictionaryToAnalysisFile(Dictionary<string, List<AnalyzerResult>> data)
+        {
+            string jsonString = JsonSerializer.Serialize(data);
+            return Encoding.UTF8.GetBytes(jsonString);
         }
 
     }

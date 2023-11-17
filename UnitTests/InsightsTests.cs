@@ -46,7 +46,7 @@ namespace UnitTests
             return sessionData;
         }
 
-        public Dictionary<string,List<AnalyzerResult>> GetAnalysisResult(int test1Verdict,int test2Verdict)
+        public static Dictionary<string,List<AnalyzerResult>> GetAnalysisResult(int test1Verdict,int test2Verdict)
         {
             List<AnalyzerResult> result = new List<AnalyzerResult>();
             result.Add(new AnalyzerResult("101", test1Verdict, "Msg1"));
